@@ -14,13 +14,17 @@ func main() {
 		log.Fatalln(`wrong number of arguments: "revision" or "timestamp" argument must be specified`)
 	}
 
+	var result string
+
 	if os.Args[1] == "revision" {
-		fmt.Print(runSvnVersion())
+		result = runSvnVersion()
 	} else if os.Args[1] == "timestamp" {
-		fmt.Print(runSvnInfo())
+		result = runSvnInfo()
 	} else {
 		log.Fatalln(`error: "revision" or "timestamp" argument must be specified`)
 	}
+
+	fmt.Print(result)
 }
 
 func runSvnVersion() string {
