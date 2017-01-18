@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -9,7 +10,41 @@ import (
 )
 
 func main() {
+	if len(os.Args) != 2 {
+		log.Fatalln(`wrong number of arguments: "revision" or "timestamp" argument must be specified`)
+	}
 
+	if os.Args[1] == "revision" {
+		fmt.Print(runSvnVersion())
+	} else if os.Args[1] == "timestamp" {
+		fmt.Print(runSvnInfo())
+	} else {
+		log.Fatalln(`error: "revision" or "timestamp" argument must be specified`)
+	}
+}
+
+func runSvnVersion() string {
+	cmd := exec.Command("svnversion", "-q")
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	scanner := bufio.NewScanner(stdout)
+	scanner.Scan()
+
+	if err := cmd.Wait(); err != nil {
+		log.Fatal(err)
+	}
+
+	return scanner.Text()
+}
+
+func runSvnInfo() string {
 	cmd := exec.Command("svn", "info", "--xml")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -29,15 +64,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if len(os.Args) != 2 {
-		log.Fatalln(`wrong number of arguments: "revision" or "timestamp" argument must be specified`)
-	}
-
-	if os.Args[1] == "revision" {
-		fmt.Print(info.Entry.Commit.Revision)
-	} else if os.Args[1] == "timestamp" {
-		fmt.Print(info.Entry.Commit.Date)
-	} else {
-		log.Fatalln(`error: "revision" or "timestamp" argument must be specified`)
-	}
+	return info.Entry.Commit.Date
 }
