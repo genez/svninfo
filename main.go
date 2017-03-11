@@ -4,27 +4,40 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"log"
 	"os"
 	"os/exec"
 )
 
+var (
+	golang = kingpin.Flag("golang", "Generate Go struct with version info.").Short('g').Default("true").Bool()
+	pkg    = kingpin.Flag("package", "Package for the Go struct").Short('p').Default("main").String()
+)
+
+const structTemplate string = `//go:generate svninfo golang %s
+package %s
+
+var (
+	Commit_Revision  string = "%s"
+	Commit_TimeStamp string = "%s"
+)
+`
+
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatalln(`wrong number of arguments: "revision" or "timestamp" argument must be specified`)
-	}
+	kingpin.Parse()
+	if *golang {
+		f, err := os.Create("version.go")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	var result string
+		defer f.Close()
 
-	if os.Args[1] == "revision" {
-		result = runSvnVersion()
-	} else if os.Args[1] == "timestamp" {
-		result = runSvnInfo()
+		f.WriteString(fmt.Sprintf(structTemplate, *pkg, *pkg, runSvnVersion(), runSvnInfo()))
 	} else {
-		log.Fatalln(`error: "revision" or "timestamp" argument must be specified`)
-	}
 
-	fmt.Print(result)
+	}
 }
 
 func runSvnVersion() string {
